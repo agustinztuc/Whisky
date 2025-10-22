@@ -18,6 +18,7 @@
 
 import SwiftUI
 import WhiskyKit
+import SemanticVersion
 
 struct SettingsView: View {
     @AppStorage("SUEnableAutomaticChecks") var whiskyUpdate = true
@@ -51,10 +52,45 @@ struct SettingsView: View {
                 Toggle("settings.toggle.whisky.updates", isOn: $whiskyUpdate)
                 Toggle("settings.toggle.whiskywine.updates", isOn: $checkWhiskyWineUpdates)
             }
+            Section("settings.runtime") {
+                if let runtime = WhiskyWineInstaller.whiskyWineVersion() {
+                    LabeledContent(String(localized: "settings.runtime.whiskywine")) {
+                        Text(versionString(runtime))
+                            .fontDesign(.monospaced)
+                    }
+                }
+                if let toolkit = WhiskyWineInstaller.whiskyWineToolkitVersion() {
+                    LabeledContent(String(localized: "settings.runtime.toolkit")) {
+                        Text(versionString(toolkit))
+                            .fontDesign(.monospaced)
+                    }
+                    if let releaseDate = WhiskyWineInstaller.whiskyWineToolkitReleaseDate() {
+                        LabeledContent(String(localized: "settings.runtime.toolkit.releaseDate")) {
+                            Text(releaseDateString(releaseDate))
+                        }
+                    }
+                } else {
+                    LabeledContent(String(localized: "settings.runtime.toolkit")) {
+                        Text(String(localized: "settings.runtime.toolkit.unavailable"))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
         .fixedSize(horizontal: false, vertical: true)
         .frame(width: ViewWidth.medium)
+    }
+
+    private func versionString(_ version: SemanticVersion) -> String {
+        "\(version.major).\(version.minor).\(version.patch)"
+    }
+
+    private func releaseDateString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
     }
 }
 

@@ -87,6 +87,14 @@ struct ConfigView: View {
                     Text("config.enhacnedSync.esync").tag(EnhancedSync.esync)
                     Text("config.enhacnedSync.msync").tag(EnhancedSync.msync)
                 }
+                Toggle(isOn: $bottle.settings.fullscreenFSR) {
+                    VStack(alignment: .leading) {
+                        Text("config.fsr")
+                        Text("config.fsr.info")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 SettingItemView(title: "config.dpi", loadingState: dpiConfigLoadingState) {
                     Button("config.inspect") {
                         dpiSheetPresented = true
@@ -123,6 +131,15 @@ struct ConfigView: View {
                 }
                 Toggle(isOn: $bottle.settings.dxvkAsync) {
                     Text("config.dxvk.async")
+                }
+                .disabled(!bottle.settings.dxvk)
+                Toggle(isOn: $bottle.settings.dxvkNvapi) {
+                    VStack(alignment: .leading) {
+                        Text("config.dxvk.nvapi")
+                        Text("config.dxvk.nvapi.info")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .disabled(!bottle.settings.dxvk)
                 Picker("config.dxvkHud", selection: $bottle.settings.dxvkHud) {

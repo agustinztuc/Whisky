@@ -1,0 +1,49 @@
+name: Build Whisky Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_release:
+        description: "Also attach the build to a GitHub Release"
+        type: boolean
+        default: false
+  push:
+    branches:
+      - main
+      - work
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 15
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.4'
+
+      - name: Build release artifact
+        run: scripts/build_whisky_release.sh
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Whisky-macOS
+          path: |
+            dist/Whisky.app.zip
+            dist/BUILD_INFO.txt
+
+      - name: Upload release asset
+        if: github.event_name == 'workflow_dispatch' && inputs.upload_release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="nightly-$(date -u +"%Y%m%d-%H%M%S")"
+          gh release create "$tag" dist/Whisky.app.zip dist/BUILD_INFO.txt --title "Nightly build $tag" --notes "Automated build from ${GITHUB_SHA}"

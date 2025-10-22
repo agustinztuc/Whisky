@@ -95,6 +95,7 @@ public struct BottleWineConfig: Codable, Equatable {
     var windowsVersion: WinVersion = .win10
     var enhancedSync: EnhancedSync = .msync
     var avxEnabled: Bool = false
+    var fullscreenFSR: Bool = false
 
     public init() {}
 
@@ -105,6 +106,7 @@ public struct BottleWineConfig: Codable, Equatable {
         self.windowsVersion = try container.decodeIfPresent(WinVersion.self, forKey: .windowsVersion) ?? .win10
         self.enhancedSync = try container.decodeIfPresent(EnhancedSync.self, forKey: .enhancedSync) ?? .msync
         self.avxEnabled = try container.decodeIfPresent(Bool.self, forKey: .avxEnabled) ?? false
+        self.fullscreenFSR = try container.decodeIfPresent(Bool.self, forKey: .fullscreenFSR) ?? false
     }
     // swiftlint:enable line_length
 }
@@ -132,6 +134,7 @@ public struct BottleDXVKConfig: Codable, Equatable {
     var dxvk: Bool = false
     var dxvkAsync: Bool = true
     var dxvkHud: DXVKHUD = .off
+    var nvapi: Bool = false
 
     public init() {}
 
@@ -140,6 +143,7 @@ public struct BottleDXVKConfig: Codable, Equatable {
         self.dxvk = try container.decodeIfPresent(Bool.self, forKey: .dxvk) ?? false
         self.dxvkAsync = try container.decodeIfPresent(Bool.self, forKey: .dxvkAsync) ?? true
         self.dxvkHud = try container.decodeIfPresent(DXVKHUD.self, forKey: .dxvkHud) ?? .off
+        self.nvapi = try container.decodeIfPresent(Bool.self, forKey: .nvapi) ?? false
     }
 }
 
@@ -193,6 +197,11 @@ public struct BottleSettings: Codable, Equatable {
         set { wineConfig.avxEnabled = newValue }
     }
 
+    public var fullscreenFSR: Bool {
+        get { return wineConfig.fullscreenFSR }
+        set { wineConfig.fullscreenFSR = newValue }
+    }
+
     /// The pinned programs on this bottle
     public var pins: [PinnedProgram] {
         get { return info.pins }
@@ -238,6 +247,11 @@ public struct BottleSettings: Codable, Equatable {
     public var dxvkHud: DXVKHUD {
         get {  return dxvkConfig.dxvkHud }
         set { dxvkConfig.dxvkHud = newValue }
+    }
+
+    public var dxvkNvapi: Bool {
+        get { return dxvkConfig.nvapi }
+        set { dxvkConfig.nvapi = newValue }
     }
 
     @discardableResult
@@ -297,6 +311,11 @@ public struct BottleSettings: Codable, Equatable {
             wineEnv.updateValue("1", forKey: "DXVK_ASYNC")
         }
 
+        if dxvkConfig.nvapi {
+            wineEnv.updateValue("1", forKey: "PROTON_ENABLE_NVAPI")
+            wineEnv.updateValue("1", forKey: "DXVK_NVAPI_ENABLE")
+        }
+
         switch enhancedSync {
         case .none:
             break
@@ -324,6 +343,10 @@ public struct BottleSettings: Codable, Equatable {
 
         if dxrEnabled {
             wineEnv.updateValue("1", forKey: "D3DM_SUPPORT_DXR")
+        }
+
+        if wineConfig.fullscreenFSR {
+            wineEnv.updateValue("1", forKey: "WINE_FULLSCREEN_FSR")
         }
     }
 }

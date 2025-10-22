@@ -20,6 +20,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import WhiskyKit
 import SemanticVersion
+import Foundation
 
 struct ContentView: View {
     @AppStorage("selectedBottleURL") private var selectedBottleURL: URL?
@@ -105,16 +106,58 @@ struct ContentView: View {
                 showSetup = true
             }
             let task = Task.detached {
-                return await WhiskyWineInstaller.shouldUpdateWhiskyWine()
+                await WhiskyWineInstaller.shouldUpdateWhiskyWine()
             }
-            let updateInfo = await task.value
-            if updateInfo.0 {
+            let (shouldUpdateRuntime, remoteRuntime) = await task.value
+            if shouldUpdateRuntime, let remoteRuntime {
                 let alert = NSAlert()
                 alert.messageText = String(localized: "update.whiskywine.title")
-                alert.informativeText = String(format: String(localized: "update.whiskywine.description"),
-                                               String(WhiskyWineInstaller.whiskyWineVersion()
-                                                      ?? SemanticVersion(0, 0, 0)),
-                                               String(updateInfo.1))
+                var informativeText = String(format: String(localized: "update.whiskywine.description"),
+                                              versionString(WhiskyWineInstaller.whiskyWineVersion()),
+                                              versionString(remoteRuntime.version))
+                if let remoteToolkit = remoteRuntime.toolkitVersion {
+                    let remoteToolkitString = versionString(remoteToolkit)
+                    let toolkitTemplate = String(localized: "update.whiskywine.toolkit")
+                    let newToolkitTemplate = String(localized: "update.whiskywine.toolkit.new")
+                    let releaseTemplate = String(localized: "update.whiskywine.toolkit.releaseDate")
+                    if let localToolkit = WhiskyWineInstaller.whiskyWineToolkitVersion() {
+                        if localToolkit < remoteToolkit {
+                            let message = String(
+                                format: toolkitTemplate,
+                                versionString(localToolkit),
+                                remoteToolkitString
+                            )
+                            informativeText += "\n\n" + message
+                        }
+                    } else {
+                        let message = String(format: newToolkitTemplate, remoteToolkitString)
+                        informativeText += "\n\n" + message
+                    }
+                    if let remoteReleaseDate = remoteRuntime.toolkitReleaseDate {
+                        let shouldSurfaceReleaseDate: Bool
+                        if let localReleaseDate = WhiskyWineInstaller.whiskyWineToolkitReleaseDate() {
+                            shouldSurfaceReleaseDate = localReleaseDate < remoteReleaseDate
+                        } else {
+                            shouldSurfaceReleaseDate = true
+                        }
+                        if shouldSurfaceReleaseDate {
+                            let releaseString = releaseDateString(remoteReleaseDate)
+                            let message = String(
+                                format: releaseTemplate,
+                                remoteToolkitString,
+                                releaseString
+                            )
+                            informativeText += "\n\n" + message
+                        }
+                    }
+                } else if let remoteReleaseDate = remoteRuntime.toolkitReleaseDate {
+                    let releaseTemplate = String(localized: "update.whiskywine.toolkit.releaseDate")
+                    let toolkitLabel = String(localized: "settings.runtime.toolkit")
+                    let releaseString = releaseDateString(remoteReleaseDate)
+                    let message = String(format: releaseTemplate, toolkitLabel, releaseString)
+                    informativeText += "\n\n" + message
+                }
+                alert.informativeText = informativeText
                 alert.alertStyle = .warning
                 alert.addButton(withTitle: String(localized: "update.whiskywine.update"))
                 alert.addButton(withTitle: String(localized: "button.removeAlert.cancel"))
@@ -204,6 +247,22 @@ struct ContentView: View {
                 .sorted()
         }
     }
+}
+
+private func versionString(_ version: SemanticVersion) -> String {
+    "\(version.major).\(version.minor).\(version.patch)"
+}
+
+private func versionString(_ version: SemanticVersion?) -> String {
+    guard let version else { return versionString(SemanticVersion(0, 0, 0)) }
+    return versionString(version)
+}
+
+private func releaseDateString(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateStyle = .long
+    formatter.timeStyle = .none
+    return formatter.string(from: date)
 }
 
 #Preview {

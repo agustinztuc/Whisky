@@ -29,6 +29,17 @@ Debug and profile with ease
 
 Whisky provides a clean and easy to use graphical wrapper for Wine built in native SwiftUI. You can make and manage bottles, install and run Windows apps and games, and unlock the full potential of your Mac with no technical knowledge required. Whisky is built on top of CrossOver 22.1.1, and Apple's own `Game Porting Toolkit`.
 
+Latest updates focus on compatibility for modern games:
+
+- Surface the bundled Game Porting Toolkit version and release date so you can confirm when Apple's 3.0 build from October 10, 2025 with DLSS is installed.
+- Add one-click toggles for Wine Fullscreen FSR and NVIDIA NVAPI (DLSS/RTX) to squeeze more performance and compatibility out of demanding titles.
+- Ship WhiskyWine 7.7.1 rebuilt with Apple's Game Porting Toolkit 3.0 (2025-10-10) for broader compatibility out of the box.
+
+Automated builds are available (unsigned for now):
+
+- Every push to `main` (and this working branch) triggers a macOS build that uploads `Whisky.app.zip` as a workflow artifact along with a `BUILD_INFO.txt` summary.
+- You can also run the workflow manually from GitHub to publish a nightly release tag containing the same zipped bundle ready to download.
+
 Translated on [Crowdin](https://crowdin.com/project/whisky).
 
 ---

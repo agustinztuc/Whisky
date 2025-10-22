@@ -31,6 +31,12 @@ public class WhiskyWineInstaller {
     /// URL to the installed `wine` `bin` directory
     public static let binFolder: URL = libraryFolder.appending(path: "Wine").appending(path: "bin")
 
+    private static let versionPlistURL = libraryFolder
+        .appending(path: "WhiskyWineVersion")
+        .appendingPathExtension("plist")
+
+    private static let remoteVersionURL = URL(string: "https://data.getwhisky.app/Wine/WhiskyWineVersion.plist")
+
     public static func isWhiskyWineInstalled() -> Bool {
         return whiskyWineVersion() != nil
     }
@@ -60,62 +66,180 @@ public class WhiskyWineInstaller {
         }
     }
 
-    public static func shouldUpdateWhiskyWine() async -> (Bool, SemanticVersion) {
-        let versionPlistURL = "https://data.getwhisky.app/Wine/WhiskyWineVersion.plist"
-        let localVersion = whiskyWineVersion()
+    public static func shouldUpdateWhiskyWine() async -> (Bool, WhiskyWineVersion?) {
+        let localInfo = whiskyWineMetadata()
+        let remoteInfo = await fetchRemoteWhiskyWineMetadata()
 
-        var remoteVersion: SemanticVersion?
-
-        if let remoteUrl = URL(string: versionPlistURL) {
-            remoteVersion = await withCheckedContinuation { continuation in
-                URLSession(configuration: .ephemeral).dataTask(with: URLRequest(url: remoteUrl)) { data, _, error in
-                    do {
-                        if error == nil, let data = data {
-                            let decoder = PropertyListDecoder()
-                            let remoteInfo = try decoder.decode(WhiskyWineVersion.self, from: data)
-                            let remoteVersion = remoteInfo.version
-
-                            continuation.resume(returning: remoteVersion)
-                            return
-                        }
-                        if let error = error {
-                            print(error)
-                        }
-                    } catch {
-                        print(error)
-                    }
-
-                    continuation.resume(returning: nil)
-                }.resume()
-            }
+        guard let localInfo = localInfo, let remoteInfo = remoteInfo else {
+            return (false, remoteInfo)
         }
 
-        if let localVersion = localVersion, let remoteVersion = remoteVersion {
-            if localVersion < remoteVersion {
-                return (true, remoteVersion)
-            }
+        if localInfo.version < remoteInfo.version {
+            return (true, remoteInfo)
         }
 
-        return (false, SemanticVersion(0, 0, 0))
+        if shouldUpdateToolkit(local: localInfo, remote: remoteInfo) {
+            return (true, remoteInfo)
+        }
+
+        return (false, remoteInfo)
     }
 
     public static func whiskyWineVersion() -> SemanticVersion? {
-        do {
-            let versionPlist = libraryFolder
-                .appending(path: "WhiskyWineVersion")
-                .appendingPathExtension("plist")
+        return whiskyWineMetadata()?.version
+    }
 
+    public static func whiskyWineToolkitVersion() -> SemanticVersion? {
+        return whiskyWineMetadata()?.toolkitVersion
+    }
+
+    public static func whiskyWineToolkitReleaseDate() -> Date? {
+        return whiskyWineMetadata()?.toolkitReleaseDate
+    }
+
+    private static func whiskyWineMetadata() -> WhiskyWineVersion? {
+        do {
+            guard FileManager.default.fileExists(atPath: versionPlistURL.path) else { return nil }
             let decoder = PropertyListDecoder()
-            let data = try Data(contentsOf: versionPlist)
-            let info = try decoder.decode(WhiskyWineVersion.self, from: data)
-            return info.version
+            let data = try Data(contentsOf: versionPlistURL)
+            return try decoder.decode(WhiskyWineVersion.self, from: data)
         } catch {
             print(error)
             return nil
         }
     }
+
+    private static func fetchRemoteWhiskyWineMetadata() async -> WhiskyWineVersion? {
+        guard let remoteUrl = remoteVersionURL else {
+            return nil
+        }
+
+        return await withCheckedContinuation { continuation in
+            URLSession(configuration: .ephemeral).dataTask(with: URLRequest(url: remoteUrl)) { data, _, error in
+                var info: WhiskyWineVersion?
+
+                if error == nil, let data = data {
+                    do {
+                        let decoder = PropertyListDecoder()
+                        info = try decoder.decode(WhiskyWineVersion.self, from: data)
+                    } catch {
+                        print(error)
+                    }
+                } else if let error = error {
+                    print(error)
+                }
+
+                continuation.resume(returning: info)
+            }.resume()
+        }
+    }
+
+    private static func shouldUpdateToolkit(local: WhiskyWineVersion, remote: WhiskyWineVersion) -> Bool {
+        guard let remoteToolkit = remote.toolkitVersion else {
+            return false
+        }
+
+        guard let localToolkit = local.toolkitVersion else {
+            return true
+        }
+
+        if localToolkit < remoteToolkit {
+            return true
+        }
+
+        guard localToolkit == remoteToolkit else {
+            return false
+        }
+
+        guard let remoteReleaseDate = remote.toolkitReleaseDate else {
+            return false
+        }
+
+        guard let localReleaseDate = local.toolkitReleaseDate else {
+            return true
+        }
+
+        return localReleaseDate < remoteReleaseDate
+    }
 }
 
 struct WhiskyWineVersion: Codable {
     var version: SemanticVersion = SemanticVersion(1, 0, 0)
+    var toolkitVersion: SemanticVersion?
+    var toolkitReleaseDate: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case version
+        case toolkitVersion = "toolkit"
+        case legacyToolkitVersion = "toolkitVersion"
+        case toolkitReleaseDate
+    }
+
+    init(version: SemanticVersion = SemanticVersion(1, 0, 0),
+         toolkitVersion: SemanticVersion? = nil,
+         toolkitReleaseDate: Date? = nil) {
+        self.version = version
+        self.toolkitVersion = toolkitVersion
+        self.toolkitReleaseDate = toolkitReleaseDate
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.version = try container.decodeIfPresent(SemanticVersion.self, forKey: .version) ?? SemanticVersion(1, 0, 0)
+        if let toolkit = try container.decodeIfPresent(SemanticVersion.self, forKey: .toolkitVersion) {
+            self.toolkitVersion = toolkit
+        } else {
+            self.toolkitVersion = try container.decodeIfPresent(SemanticVersion.self, forKey: .legacyToolkitVersion)
+        }
+        if let releaseString = try container.decodeIfPresent(String.self, forKey: .toolkitReleaseDate) {
+            self.toolkitReleaseDate = WhiskyWineVersion.parseReleaseDate(from: releaseString)
+        } else {
+            self.toolkitReleaseDate = try container.decodeIfPresent(Date.self, forKey: .toolkitReleaseDate)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(version, forKey: .version)
+        if let toolkitVersion = toolkitVersion {
+            try container.encode(toolkitVersion, forKey: .toolkitVersion)
+        }
+        if let toolkitReleaseDate = toolkitReleaseDate {
+            let releaseString = WhiskyWineVersion.releaseDateFormatter.string(from: toolkitReleaseDate)
+            try container.encode(releaseString, forKey: .toolkitReleaseDate)
+        }
+    }
+}
+
+extension WhiskyWineVersion {
+    fileprivate static let releaseDateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
+
+    private static let releaseDateTimeFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
+
+    private static let releaseDateTimeWithFractionFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
+
+    static func parseReleaseDate(from string: String) -> Date? {
+        if let date = releaseDateTimeWithFractionFormatter.date(from: string) {
+            return date
+        }
+        if let date = releaseDateTimeFormatter.date(from: string) {
+            return date
+        }
+        return releaseDateFormatter.date(from: string)
+    }
 }

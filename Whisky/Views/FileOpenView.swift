@@ -24,8 +24,16 @@ struct FileOpenView: View {
     var currentBottle: URL?
     var bottles: [Bottle]
 
-    @State private var selection: URL = URL(filePath: "")
+    @State private var selection: URL
     @Environment(\.dismiss) private var dismiss
+
+    init(fileURL: URL, currentBottle: URL?, bottles: [Bottle]) {
+        self.fileURL = fileURL
+        self.currentBottle = currentBottle
+        self.bottles = bottles
+
+        _selection = State(initialValue: currentBottle ?? bottles.first?.url ?? URL(filePath: ""))
+    }
 
     var body: some View {
         NavigationStack {
@@ -65,7 +73,7 @@ struct FileOpenView: View {
                 return
             }
 
-            selection = bottles.first(where: { $0.url == currentBottle })?.url ?? bottles[0].url
+            selection = bottles.first(where: { $0.url == currentBottle })?.url ?? selection
 
             if bottles.count == 1 {
                 // If the user only has one bottle
@@ -79,7 +87,8 @@ struct FileOpenView: View {
         if let bottle = bottles.first(where: { $0.url == selection }) {
             Task.detached(priority: .userInitiated) {
                 do {
-                    if fileURL.pathExtension == "bat" {
+                    let fileExtension = fileURL.pathExtension.lowercased()
+                    if ["bat", "cmd"].contains(fileExtension) {
                         try await Wine.runBatchFile(url: fileURL,
                                                     bottle: bottle)
                     } else {

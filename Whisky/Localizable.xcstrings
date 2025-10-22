@@ -20684,6 +20684,198 @@
           }
         }
       }
+    },
+    "config.dxvk.nvapi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable NVAPI (DLSS/RTX)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activar NVAPI (DLSS/RTX)"
+          }
+        }
+      }
+    },
+    "config.dxvk.nvapi.info" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expose NVIDIA NVAPI interfaces through DXVK to enable DLSS and RTX features. Requires Game Porting Toolkit 3.0 or newer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expone las interfaces NVAPI de NVIDIA mediante DXVK para habilitar DLSS y funciones RTX. Requiere Game Porting Toolkit 3.0 o posterior."
+          }
+        }
+      }
+    },
+    "config.fsr" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Force Wine Fullscreen FSR"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forzar Wine Fullscreen FSR"
+          }
+        }
+      }
+    },
+    "config.fsr.info" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upscale fullscreen apps with AMD FidelityFX Super Resolution for better frame rates."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reescala las aplicaciones a pantalla completa con AMD FidelityFX Super Resolution para mejorar los fotogramas."
+          }
+        }
+      }
+    },
+    "settings.runtime" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entorno de ejecución"
+          }
+        }
+      }
+    },
+    "settings.runtime.whiskywine" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WhiskyWine runtime"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entorno WhiskyWine"
+          }
+        }
+      }
+    },
+    "settings.runtime.toolkit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Game Porting Toolkit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Game Porting Toolkit"
+          }
+        }
+      }
+    },
+    "settings.runtime.toolkit.releaseDate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toolkit release date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fecha de lanzamiento del Toolkit"
+          }
+        }
+      }
+    },
+    "settings.runtime.toolkit.unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not detected"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No detectado"
+          }
+        }
+      }
+    },
+    "update.whiskywine.toolkit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This update also upgrades the bundled Game Porting Toolkit from %@ to %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta actualización también actualiza el Game Porting Toolkit incluido de %@ a %@."
+          }
+        }
+      }
+    },
+    "update.whiskywine.toolkit.new" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This update bundles Game Porting Toolkit %@ for enhanced compatibility."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta actualización incluye Game Porting Toolkit %@ para mejorar la compatibilidad."
+          }
+        }
+      }
+    },
+    "update.whiskywine.toolkit.releaseDate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Game Porting Toolkit %@ was released on %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Game Porting Toolkit %@ se lanzó el %@."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

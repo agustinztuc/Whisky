@@ -20,6 +20,13 @@ import Foundation
 import os.log
 import SemanticVersion
 
+private let toolkitReleaseDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateStyle = .long
+    formatter.timeStyle = .none
+    return formatter
+}()
+
 extension FileHandle {
     func extract<T>(_ type: T.Type, offset: UInt64 = 0) -> T? {
         do {
@@ -76,6 +83,12 @@ extension FileHandle {
 
         if let version = WhiskyWineInstaller.whiskyWineVersion() {
             header += "WhiskyWine Version: \(version.major).\(version.minor).\(version.patch)\n"
+        }
+        if let toolkit = WhiskyWineInstaller.whiskyWineToolkitVersion() {
+            header += "Game Porting Toolkit: \(toolkit.major).\(toolkit.minor).\(toolkit.patch)\n"
+        }
+        if let toolkitReleaseDate = WhiskyWineInstaller.whiskyWineToolkitReleaseDate() {
+            header += "Game Porting Toolkit Release: \(toolkitReleaseDateFormatter.string(from: toolkitReleaseDate))\n"
         }
         header += "Windows Version: \(bottle.settings.windowsVersion)\n"
         header += "Enhanced Sync: \(bottle.settings.enhancedSync)\n\n"

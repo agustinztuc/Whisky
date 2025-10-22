@@ -117,15 +117,21 @@ struct ContentView: View {
                                               versionString(remoteRuntime.version))
                 if let remoteToolkit = remoteRuntime.toolkitVersion {
                     let remoteToolkitString = versionString(remoteToolkit)
+                    let toolkitTemplate = String(localized: "update.whiskywine.toolkit")
+                    let newToolkitTemplate = String(localized: "update.whiskywine.toolkit.new")
+                    let releaseTemplate = String(localized: "update.whiskywine.toolkit.releaseDate")
                     if let localToolkit = WhiskyWineInstaller.whiskyWineToolkitVersion() {
                         if localToolkit < remoteToolkit {
-                            informativeText += "\n\n" + String(format: String(localized: "update.whiskywine.toolkit"),
-                                                                   versionString(localToolkit),
-                                                                   remoteToolkitString)
+                            let message = String(
+                                format: toolkitTemplate,
+                                versionString(localToolkit),
+                                remoteToolkitString
+                            )
+                            informativeText += "\n\n" + message
                         }
                     } else {
-                        informativeText += "\n\n" + String(format: String(localized: "update.whiskywine.toolkit.new"),
-                                                               remoteToolkitString)
+                        let message = String(format: newToolkitTemplate, remoteToolkitString)
+                        informativeText += "\n\n" + message
                     }
                     if let remoteReleaseDate = remoteRuntime.toolkitReleaseDate {
                         let shouldSurfaceReleaseDate: Bool
@@ -135,15 +141,21 @@ struct ContentView: View {
                             shouldSurfaceReleaseDate = true
                         }
                         if shouldSurfaceReleaseDate {
-                            informativeText += "\n\n" + String(format: String(localized: "update.whiskywine.toolkit.releaseDate"),
-                                                                   remoteToolkitString,
-                                                                   releaseDateString(remoteReleaseDate))
+                            let releaseString = releaseDateString(remoteReleaseDate)
+                            let message = String(
+                                format: releaseTemplate,
+                                remoteToolkitString,
+                                releaseString
+                            )
+                            informativeText += "\n\n" + message
                         }
                     }
                 } else if let remoteReleaseDate = remoteRuntime.toolkitReleaseDate {
-                    informativeText += "\n\n" + String(format: String(localized: "update.whiskywine.toolkit.releaseDate"),
-                                                           String(localized: "settings.runtime.toolkit"),
-                                                           releaseDateString(remoteReleaseDate))
+                    let releaseTemplate = String(localized: "update.whiskywine.toolkit.releaseDate")
+                    let toolkitLabel = String(localized: "settings.runtime.toolkit")
+                    let releaseString = releaseDateString(remoteReleaseDate)
+                    let message = String(format: releaseTemplate, toolkitLabel, releaseString)
+                    informativeText += "\n\n" + message
                 }
                 alert.informativeText = informativeText
                 alert.alertStyle = .warning

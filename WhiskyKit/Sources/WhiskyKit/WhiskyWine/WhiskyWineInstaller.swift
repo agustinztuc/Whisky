@@ -35,6 +35,8 @@ public class WhiskyWineInstaller {
         .appending(path: "WhiskyWineVersion")
         .appendingPathExtension("plist")
 
+    private static let remoteVersionURL = URL(string: "https://data.getwhisky.app/Wine/WhiskyWineVersion.plist")
+
     public static func isWhiskyWineInstalled() -> Bool {
         return whiskyWineVersion() != nil
     }
@@ -65,33 +67,8 @@ public class WhiskyWineInstaller {
     }
 
     public static func shouldUpdateWhiskyWine() async -> (Bool, WhiskyWineVersion?) {
-        let remoteVersionPlistURL = "https://data.getwhisky.app/Wine/WhiskyWineVersion.plist"
         let localInfo = whiskyWineMetadata()
-
-        var remoteInfo: WhiskyWineVersion?
-
-        if let remoteUrl = URL(string: remoteVersionPlistURL) {
-            remoteInfo = await withCheckedContinuation { continuation in
-                URLSession(configuration: .ephemeral).dataTask(with: URLRequest(url: remoteUrl)) { data, _, error in
-                    do {
-                        if error == nil, let data = data {
-                            let decoder = PropertyListDecoder()
-                            let info = try decoder.decode(WhiskyWineVersion.self, from: data)
-
-                            continuation.resume(returning: info)
-                            return
-                        }
-                        if let error = error {
-                            print(error)
-                        }
-                    } catch {
-                        print(error)
-                    }
-
-                    continuation.resume(returning: nil)
-                }.resume()
-            }
-        }
+        let remoteInfo = await fetchRemoteWhiskyWineMetadata()
 
         guard let localInfo = localInfo, let remoteInfo = remoteInfo else {
             return (false, remoteInfo)
@@ -101,24 +78,8 @@ public class WhiskyWineInstaller {
             return (true, remoteInfo)
         }
 
-        if let remoteToolkit = remoteInfo.toolkitVersion {
-            if let localToolkit = localInfo.toolkitVersion {
-                if localToolkit < remoteToolkit {
-                    return (true, remoteInfo)
-                }
-                if localToolkit == remoteToolkit,
-                   let remoteReleaseDate = remoteInfo.toolkitReleaseDate {
-                    if let localReleaseDate = localInfo.toolkitReleaseDate {
-                        if localReleaseDate < remoteReleaseDate {
-                            return (true, remoteInfo)
-                        }
-                    } else {
-                        return (true, remoteInfo)
-                    }
-                }
-            } else {
-                return (true, remoteInfo)
-            }
+        if shouldUpdateToolkit(local: localInfo, remote: remoteInfo) {
+            return (true, remoteInfo)
         }
 
         return (false, remoteInfo)
@@ -146,6 +107,59 @@ public class WhiskyWineInstaller {
             print(error)
             return nil
         }
+    }
+
+    private static func fetchRemoteWhiskyWineMetadata() async -> WhiskyWineVersion? {
+        guard let remoteUrl = remoteVersionURL else {
+            return nil
+        }
+
+        return await withCheckedContinuation { continuation in
+            URLSession(configuration: .ephemeral).dataTask(with: URLRequest(url: remoteUrl)) { data, _, error in
+                var info: WhiskyWineVersion?
+
+                if error == nil, let data = data {
+                    do {
+                        let decoder = PropertyListDecoder()
+                        info = try decoder.decode(WhiskyWineVersion.self, from: data)
+                    } catch {
+                        print(error)
+                    }
+                } else if let error = error {
+                    print(error)
+                }
+
+                continuation.resume(returning: info)
+            }.resume()
+        }
+    }
+
+    private static func shouldUpdateToolkit(local: WhiskyWineVersion, remote: WhiskyWineVersion) -> Bool {
+        guard let remoteToolkit = remote.toolkitVersion else {
+            return false
+        }
+
+        guard let localToolkit = local.toolkitVersion else {
+            return true
+        }
+
+        if localToolkit < remoteToolkit {
+            return true
+        }
+
+        guard localToolkit == remoteToolkit else {
+            return false
+        }
+
+        guard let remoteReleaseDate = remote.toolkitReleaseDate else {
+            return false
+        }
+
+        guard let localReleaseDate = local.toolkitReleaseDate else {
+            return true
+        }
+
+        return localReleaseDate < remoteReleaseDate
     }
 }
 
